@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LínguaMedia - Tradução Instantânea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #2b1f5c 0%, #1a1233 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .glow-purple {
+            box-shadow: 0 0 40px rgba(127, 0, 255, 0.6),
+                0 0 80px rgba(127, 0, 255, 0.4),
+                0 0 120px rgba(127, 0, 255, 0.2);
+        }
+
+        .glow-purple-hover:hover {
+            box-shadow: 0 0 50px rgba(127, 0, 255, 0.8),
+                0 0 100px rgba(127, 0, 255, 0.5),
+                0 0 150px rgba(127, 0, 255, 0.3);
+        }
+
+        .mic-button {
+            background: linear-gradient(135deg, #7F00FF 0%, #5F00CC 100%);
+            transition: all 0.3s ease;
+        }
+
+        .mic-button:hover {
+            transform: scale(1.05);
+        }
+
+        .mic-button:active {
+            transform: scale(0.95);
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #7F00FF;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+
+        .snackbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 20, 50, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            border: 1px solid rgba(127, 0, 255, 0.5);
+            z-index: 1000;
+            animation: slideUp 0.3s ease;
+        }
+
+        .snackbar.hide {
+            animation: slideDown 0.3s ease forwards;
+        }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2b1f5c 0%, #1a1233 100%);
+            border: 1px solid rgba(127, 0, 255, 0.3);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #7F00FF;
+            box-shadow: 0 0 0 2px rgba(127, 0, 255, 0.2);
+        }
+
+        .action-button {
+            background: rgba(30, 20, 50, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(127, 0, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .action-button:hover {
+            background: rgba(127, 0, 255, 0.2);
+            border-color: #7F00FF;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+        }
+
+        .listening {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+
+<body class="text-white">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-12">
+            <h1 class="text-3xl font-bold">LínguaMedia</h1>
+            <button id="settingsBtn" class="p-2 rounded-lg action-button">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+        </header>
+
+        <!-- Language Selector -->
+        <div class="mb-12">
+            <div class="bg-opacity-20 bg-white backdrop-blur-lg rounded-2xl p-6 border border-purple-500/30">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-300 mb-1">Traduzir de</p>
+                        <p class="text-xl font-semibold">Língua Autodetectada</p>
+                    </div>
+                    <button id="languageBtn" class="p-2 rounded-lg hover:bg-white/10 transition">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <label for="targetLanguage" class="text-sm text-gray-300 block mb-2">Traduzir para</label>
+                    <select id="targetLanguage"
+                        class="w-full bg-white/10 border border-purple-500/30 rounded-lg px-4 py-2 focus:outline-none focus:border-purple-500">
+                        <option value="English">Inglês (English)</option>
+                        <option value="Changana">Changana</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Microphone Button -->
+        <div class="flex justify-center mb-12">
+            <button id="micButton"
+                class="mic-button glow-purple glow-purple-hover rounded-full w-64 h-64 flex items-center justify-center relative">
+                <svg id="micIcon" xmlns="http://www.w3.org/2000/svg" class="w-32 h-32" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+                <div id="spinnerIcon" class="spinner hidden absolute"></div>
+            </button>
+        </div>
+
+        <!-- Translation Display Area -->
+        <div id="translationDisplay" class="hidden mb-12">
+            <div class="bg-opacity-20 bg-white backdrop-blur-lg rounded-2xl p-6 border border-purple-500/30">
+                <div class="space-y-4">
+                    <!-- Original Text -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-purple-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                            <span class="text-sm text-gray-400 font-medium">Original</span>
+                        </div>
+                        <p id="originalText" class="text-white text-lg"></p>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="border-t border-purple-500/30"></div>
+
+                    <!-- Translated Text -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-400" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                            </svg>
+                            <span class="text-sm text-gray-400 font-medium" id="targetLangLabel">Tradução</span>
+                        </div>
+                        <p id="translatedText" class="text-white text-lg font-medium"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center gap-4 mb-8">
+            <button id="textBtn"
+                class="action-button rounded-xl px-6 py-3 flex flex-col items-center gap-2 min-w-[120px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                <span class="text-sm">Texto</span>
+            </button>
+            <button id="listenBtn"
+                class="action-button rounded-xl px-6 py-3 flex flex-col items-center gap-2 min-w-[120px]" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <span class="text-sm">Ouvir</span>
+            </button>
+            <button id="historyBtn"
+                class="action-button rounded-xl px-6 py-3 flex flex-col items-center gap-2 min-w-[120px]">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="text-sm">Histórico</span>
+            </button>
+        </div>
+
+        <!-- Footer Text -->
+        <p class="text-center text-sm text-gray-400">
+            Tradução instantânea para línguas nacionais moçambicanas
+        </p>
+    </div>
+
+    <!-- Modal for Text Input -->
+    <div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0" onclick="closeModal()"></div>
+        <div class="modal-content relative rounded-2xl p-6 w-full max-w-md z-10">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Digite o texto para traduzir</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <textarea id="textInput"
+                class="w-full h-40 bg-white/10 border border-purple-500/30 rounded-lg px-4 py-3 text-white resize-none"
+                placeholder="Digite ou cole o texto aqui..."></textarea>
+            <div class="flex gap-3 mt-4">
+                <button onclick="closeModal()"
+                    class="flex-1 px-4 py-2 rounded-lg border border-purple-500/30 hover:bg-white/10 transition">
+                    Cancelar
+                </button>
+                <button onclick="submitText()"
+                    class="flex-1 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 transition">
+                    Traduzir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-overlay absolute inset-0" onclick="closeHistoryModal()"></div>
+        <div class="modal-content relative rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] z-10 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Histórico de Traduções</h2>
+                <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- History List -->
+            <div id="historyList" class="flex-1 overflow-y-auto space-y-3 mb-4">
+                <!-- History items will be inserted here -->
+            </div>
+
+            <!-- Clear History Button -->
+            <div class="flex gap-3">
+                <button onclick="clearHistory()"
+                    class="flex-1 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition">
+                    Limpar Histórico
+                </button>
+                <button onclick="closeHistoryModal()"
+                    class="flex-1 px-4 py-2 rounded-lg border border-purple-500/30 hover:bg-white/10 transition">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize global state FIRST before any other scripts
+        window.appState = {
+            status: 'idle', // idle, translating, playing
+            audioBlob: null,
+            translatedText: '',
+            firebase: null,
+            auth: null,
+            lastUtterance: null // For Web Speech API
+        };
+    </script>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Initialize Firebase
+        async function initFirebase() {
+            try {
+                if (typeof __firebase_config !== 'undefined') {
+                    const app = initializeApp(__firebase_config);
+                    window.appState.firebase = app;
+                    window.appState.auth = getAuth(app);
+
+                    // Authenticate
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(window.appState.auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(window.appState.auth);
+                    }
+                    console.log('Firebase initialized successfully');
+                } else {
+                    console.warn('Firebase config not found');
+                }
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+            }
+        }
+
+        // Initialize on load
+        initFirebase();
+    </script>
+
+    <script>
+        // Helper function to list available models (call from console: listAvailableModels())
+        async function listAvailableModels() {
+            const apiKey = 'AIzaSyBIxlWSCYn1gcQLp7qsTHSFGuMI6IB2rHA';
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+                const data = await response.json();
+                console.log('Modelos disponíveis:');
+                data.models.forEach(model => {
+                    console.log(`- ${model.name} (${model.displayName})`);
+                    console.log(`  Métodos suportados: ${model.supportedGenerationMethods.join(', ')}`);
+                });
+                return data.models;
+            } catch (error) {
+                console.error('Erro ao listar modelos:', error);
+            }
+        }
+
+        // Utility Functions
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcm16, sampleRate = 24000) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const byteRate = sampleRate * numChannels * bitsPerSample / 8;
+            const blockAlign = numChannels * bitsPerSample / 8;
+            const dataSize = pcm16.byteLength;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            // WAV header
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            // Copy PCM data
+            const pcmView = new Int16Array(pcm16);
+            const wavView = new Int16Array(buffer, 44);
+            wavView.set(pcmView);
+
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        // Snackbar notification
+        function showSnackbar(message, duration = 3000) {
+            const existingSnackbar = document.querySelector('.snackbar');
+            if (existingSnackbar) {
+                existingSnackbar.remove();
+            }
+
+            const snackbar = document.createElement('div');
+            snackbar.className = 'snackbar';
+            snackbar.textContent = message;
+            document.body.appendChild(snackbar);
+
+            setTimeout(() => {
+                snackbar.classList.add('hide');
+                setTimeout(() => snackbar.remove(), 300);
+            }, duration);
+        }
+
+        // API call with retry logic
+        async function callGeminiApi(prompt, systemInstruction, model, responseModalities = null, speechConfig = null) {
+            const maxRetries = 3;
+            let attempt = 0;
+
+            while (attempt < maxRetries) {
+                try {
+                    const apiKey = 'AIzaSyBIxlWSCYn1gcQLp7qsTHSFGuMI6IB2rHA'; // Replace with actual API key
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+                    const requestBody = {
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }],
+                        systemInstruction: {
+                            parts: [{
+                                text: systemInstruction
+                            }]
+                        }
+                    };
+
+                    if (responseModalities) {
+                        requestBody.generationConfig = {
+                            responseModalities: responseModalities
+                        };
+                    }
+
+                    if (speechConfig) {
+                        requestBody.generationConfig = requestBody.generationConfig || {};
+                        requestBody.generationConfig.speechConfig = speechConfig;
+                    }
+
+                    console.log('Enviando requisição para:', model, requestBody);
+
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (response.status === 429) {
+                        // Rate limit - exponential backoff
+                        const waitTime = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, waitTime));
+                        attempt++;
+                        continue;
+                    }
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        console.error('API Error Details:', errorData);
+                        throw new Error(`API request failed: ${response.status} - ${JSON.stringify(errorData)}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        throw error;
+                    }
+                    // Exponential backoff
+                    const waitTime = Math.pow(2, attempt) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+            }
+
+            // Should never reach here, but just in case
+            throw new Error('Falha na requisição após todas as tentativas');
+        }
+
+        // UI State Management
+        function setUIState(state) {
+            window.appState.status = state;
+            const micButton = document.getElementById('micButton');
+            const micIcon = document.getElementById('micIcon');
+            const spinnerIcon = document.getElementById('spinnerIcon');
+            const listenBtn = document.getElementById('listenBtn');
+
+            switch (state) {
+                case 'idle':
+                    micButton.disabled = false;
+                    micIcon.classList.remove('hidden');
+                    spinnerIcon.classList.add('hidden');
+                    break;
+                case 'translating':
+                    micButton.disabled = true;
+                    micIcon.classList.add('hidden');
+                    spinnerIcon.classList.remove('hidden');
+                    listenBtn.disabled = true;
+                    break;
+                case 'playing':
+                    micButton.disabled = false;
+                    micIcon.classList.remove('hidden');
+                    spinnerIcon.classList.add('hidden');
+                    listenBtn.disabled = false;
+                    break;
+            }
+        }
+
+        // Translation Flow
+        async function translateAndSpeak(text, targetLanguage) {
+            try {
+                setUIState('translating');
+
+                // Step 1: Translate
+                const translationSystemInstruction = "Aja como um tradutor linguístico profissional. Dada uma frase e uma língua de destino, forneça apenas a tradução do texto, sem qualquer formatação ou texto adicional. A língua de destino padrão é Inglês, o usuario pode selecionar Changana como opcional para escutar";
+                const translationPrompt = `Traduza o seguinte texto para ${targetLanguage}: "${text}"`;
+
+                console.log('Iniciando tradução para:', targetLanguage);
+
+                const translationResponse = await callGeminiApi(
+                    translationPrompt,
+                    translationSystemInstruction,
+                    'gemini-2.5-flash'
+                );
+
+                console.log('Resposta da tradução:', translationResponse);
+
+                if (!translationResponse.candidates || !translationResponse.candidates[0]) {
+                    throw new Error('Tradução falhou');
+                }
+
+                const translatedText = translationResponse.candidates[0].content.parts[0].text.trim();
+                window.appState.translatedText = translatedText;
+
+                // Update display
+                updateTranslationDisplay(text, translatedText, targetLanguage);
+
+                // Save to history
+                saveToHistory(text, translatedText, targetLanguage);
+
+                showSnackbar(`Traduzido: ${translatedText}`);
+
+                // Step 2: Text-to-Speech using Web Speech API (free, native browser API)
+                try {
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(translatedText);
+
+                        // Configure voice based on target language
+                        if (targetLanguage === 'English') {
+                            utterance.lang = 'en-US';
+                        } else if (targetLanguage === 'Changana') {
+                            utterance.lang = 'pt-PT'; // Portuguese as fallback for Changana
+                        }
+
+                        // Voice settings
+                        utterance.rate = 0.9; // Speed (0.1 to 10)
+                        utterance.pitch = 1; // Pitch (0 to 2)
+                        utterance.volume = 1; // Volume (0 to 1)
+
+                        // Try to use a better quality voice if available
+                        const voices = window.speechSynthesis.getVoices();
+                        const preferredVoice = voices.find(voice =>
+                            voice.lang.startsWith(utterance.lang.substring(0, 2)) &&
+                            (voice.name.includes('Google') || voice.name.includes('Microsoft'))
+                        );
+                        if (preferredVoice) {
+                            utterance.voice = preferredVoice;
+                        }
+
+                        // Store for replay
+                        window.appState.lastUtterance = utterance;
+
+                        // Speak
+                        window.speechSynthesis.speak(utterance);
+
+                        showSnackbar('Reproduzindo áudio...', 2000);
+                    } else {
+                        throw new Error('Web Speech API não disponível neste navegador');
+                    }
+                } catch (ttsError) {
+                    console.warn('TTS não disponível:', ttsError);
+                    showSnackbar('Tradução concluída (TTS não disponível)', 3000);
+                }
+
+                setUIState('playing');
+            } catch (error) {
+                console.error('Erro na tradução/TTS:', error);
+                showSnackbar(`Erro: ${error.message}`);
+                setUIState('idle');
+            }
+        }
+
+        // History Management Functions
+        function saveToHistory(originalText, translatedText, targetLanguage) {
+            const history = getHistory();
+            const entry = {
+                id: Date.now(),
+                original: originalText,
+                translated: translatedText,
+                language: targetLanguage,
+                timestamp: new Date().toISOString()
+            };
+            history.unshift(entry); // Add to beginning
+
+            // Keep only last 50 entries
+            if (history.length > 50) {
+                history.pop();
+            }
+
+            localStorage.setItem('linguamedia_history', JSON.stringify(history));
+        }
+
+        function getHistory() {
+            const historyStr = localStorage.getItem('linguamedia_history');
+            return historyStr ? JSON.parse(historyStr) : [];
+        }
+
+        function clearHistory() {
+            if (confirm('Tem certeza que deseja limpar todo o histórico?')) {
+                localStorage.removeItem('linguamedia_history');
+                loadHistory();
+                showSnackbar('Histórico limpo com sucesso');
+            }
+        }
+
+        function loadHistory() {
+            const history = getHistory();
+            const historyList = document.getElementById('historyList');
+
+            if (history.length === 0) {
+                historyList.innerHTML = `
+                    <div class="text-center text-gray-400 py-8">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto mb-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p>Nenhuma tradução no histórico</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = history.map(entry => {
+                const date = new Date(entry.timestamp);
+                const timeStr = date.toLocaleString('pt-PT', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <div class="bg-white/10 border border-purple-500/20 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs text-gray-400">${timeStr}</span>
+                            <span class="text-xs text-purple-400">${entry.language}</span>
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <p class="text-sm text-gray-400">Original:</p>
+                                <p class="text-white">${escapeHtml(entry.original)}</p>
+                            </div>
+                            <div class="border-t border-purple-500/20 pt-2">
+                                <p class="text-sm text-gray-400">Tradução:</p>
+                                <p class="text-white font-medium">${escapeHtml(entry.translated)}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Update translation display
+        function updateTranslationDisplay(originalText, translatedText, targetLanguage) {
+            document.getElementById('originalText').textContent = originalText;
+            document.getElementById('translatedText').textContent = translatedText;
+            document.getElementById('targetLangLabel').textContent = `Tradução (${targetLanguage})`;
+            document.getElementById('translationDisplay').classList.remove('hidden');
+        }
+
+        // Play audio
+        function playAudio(blob) {
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+            audio.onended = () => {
+                URL.revokeObjectURL(audioUrl);
+            };
+        }
+
+        // Voice Recognition
+        let recognition = null;
+        let isListening = false;
+
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                showSnackbar('Reconhecimento de voz não disponível neste navegador', 4000);
+                return null;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'pt-PT'; // Portuguese as default
+
+            recognition.onstart = () => {
+                isListening = true;
+                setUIState('translating');
+                document.getElementById('micButton').classList.add('listening');
+                showSnackbar('🎤 Ouvindo... Fale agora!', 10000);
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                // Show interim results in snackbar
+                if (interimTranscript) {
+                    showSnackbar(`Ouvindo: "${interimTranscript}"`, 1000);
+                }
+
+                // When final result is available
+                if (finalTranscript) {
+                    console.log('Transcrição final:', finalTranscript);
+                    const targetLanguage = document.getElementById('targetLanguage').value;
+                    translateAndSpeak(finalTranscript, targetLanguage);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Erro no reconhecimento de voz:', event.error);
+                isListening = false;
+                setUIState('idle');
+                document.getElementById('micButton').classList.remove('listening');
+
+                let errorMessage = 'Erro no reconhecimento de voz';
+                switch (event.error) {
+                    case 'no-speech':
+                        errorMessage = 'Nenhuma fala detectada. Tente novamente.';
+                        break;
+                    case 'audio-capture':
+                        errorMessage = 'Microfone não encontrado ou sem permissão.';
+                        break;
+                    case 'not-allowed':
+                        errorMessage = 'Permissão para usar o microfone foi negada.';
+                        break;
+                    case 'network':
+                        errorMessage = 'Erro de rede. Verifique sua conexão.';
+                        break;
+                }
+                showSnackbar(errorMessage, 4000);
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('micButton').classList.remove('listening');
+                if (window.appState.status === 'translating') {
+                    setUIState('idle');
+                }
+            };
+
+            return recognition;
+        }
+
+        function startVoiceRecognition() {
+            if (!recognition) {
+                recognition = initSpeechRecognition();
+                if (!recognition) return;
+            }
+
+            if (isListening) {
+                recognition.stop();
+                isListening = false;
+                setUIState('idle');
+                showSnackbar('Reconhecimento parado');
+            } else {
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('Erro ao iniciar reconhecimento:', error);
+                    showSnackbar('Erro ao iniciar reconhecimento de voz', 3000);
+                }
+            }
+        }
+
+        // Modal Functions (now for fallback/manual input)
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+            document.getElementById('textInput').value = '';
+            document.getElementById('textInput').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        async function submitText() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                showSnackbar('Por favor, digite algum texto');
+                return;
+            }
+
+            const targetLanguage = document.getElementById('targetLanguage').value;
+            closeModal();
+            await translateAndSpeak(text, targetLanguage);
+        }
+
+        // Event Listeners
+        // Main mic button now uses voice recognition
+        document.getElementById('micButton').addEventListener('click', startVoiceRecognition);
+
+        document.getElementById('listenBtn').addEventListener('click', () => {
+            if (window.appState.lastUtterance) {
+                window.speechSynthesis.cancel(); // Stop any current speech
+                window.speechSynthesis.speak(window.appState.lastUtterance);
+                showSnackbar('Reproduzindo novamente...', 2000);
+            } else {
+                showSnackbar('Nenhum áudio disponível');
+            }
+        });
+
+        document.getElementById('textBtn').addEventListener('click', () => {
+            openModal();
+        });
+
+        document.getElementById('historyBtn').addEventListener('click', () => {
+            openHistoryModal();
+        });
+
+        document.getElementById('settingsBtn').addEventListener('click', () => {
+            showSnackbar('Configurações em desenvolvimento');
+        });
+
+        document.getElementById('languageBtn').addEventListener('click', () => {
+            showSnackbar('Seletor de língua de origem em desenvolvimento');
+        });
+
+        // Allow Enter key to submit in modal
+        document.getElementById('textInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                submitText();
+            }
+        });
+
+        // History Modal Functions
+        function openHistoryModal() {
+            loadHistory();
+            document.getElementById('historyModal').classList.remove('hidden');
+        }
+
+        function closeHistoryModal() {
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        // Initialize
+        setUIState('idle');
+    </script>
+</body>
+
+</html>
