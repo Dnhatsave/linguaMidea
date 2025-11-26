@@ -135,31 +135,45 @@ export default function HomeScreen() {
     };
 
     const processTranslationResult = async (result) => {
+        // 1. Show translated text immediately
         setTranslatedText(result.translated_text);
         setStatusText(`Tradução: ${result.translated_text}`);
+        setState(AppState.IDLE); // Go back to idle to show results
 
-        // Save to history
-        await saveTranslation(result.original_text || "Áudio", result.translated_text);
-
-        // Generate audio
-        setStatusText('Gerando áudio...');
+        // 2. Save to history
         try {
+            await saveTranslation(result.original_text || "Áudio", result.translated_text);
+        } catch (e) {
+            console.error('Error saving history:', e);
+        }
+
+        // 3. Try to generate audio (TTS)
+        try {
+            setStatusText('Gerando áudio...');
             const audioResult = await synthesizeSpeech(result.translated_text);
-            setAudioBase64(audioResult.audio_base64);
 
-            // Play audio
-            setState(AppState.PLAYING);
-            await playAudioFromBase64(audioResult.audio_base64, (status) => {
-                if (status.didJustFinish) {
-                    setState(AppState.IDLE);
-                }
-            });
+            if (audioResult && audioResult.audio_base64) {
+                setAudioBase64(audioResult.audio_base64);
 
-            setStatusText(`✓ Tradução: ${result.translated_text}`);
-            showSnackbar('Tradução concluída!');
+                // Auto-play audio if successful
+                setState(AppState.PLAYING);
+                await playAudioFromBase64(audioResult.audio_base64, (status) => {
+                    if (status.didJustFinish) {
+                        setState(AppState.IDLE);
+                    }
+                });
+                setStatusText(`✓ Tradução: ${result.translated_text}`);
+            } else {
+                console.warn('TTS returned empty audio');
+                showSnackbar('Áudio não disponível para esta tradução');
+                setStatusText(`✓ Tradução: ${result.translated_text}`);
+            }
         } catch (error) {
             console.error('TTS error:', error);
-            showSnackbar('Erro ao gerar áudio (TTS)');
+            // Don't fail the whole process, just notify user about audio
+            showSnackbar('Texto traduzido (Áudio indisponível)');
+            setAudioBase64(null);
+            setStatusText(`✓ Tradução: ${result.translated_text}`);
             setState(AppState.IDLE);
         }
     };

@@ -5,7 +5,7 @@
 // API Configuration
 export const API_CONFIG = {
     // Change this to your backend URL
-    BASE_URL: __DEV__ ? 'http://localhost:8000' : 'https://your-production-api.com',
+    BASE_URL: __DEV__ ? 'http://192.168.0.3:8000' : 'https://your-production-api.com',
     TIMEOUT: 30000, // 30 seconds
 };
 
