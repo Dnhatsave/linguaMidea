@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import translation
 from dotenv import load_dotenv
 import logging
 
-# Load environment variables
+# Load environment variables before importing routers
 load_dotenv()
+
+from app.routers import translation
 
 # Configure logging
 logging.basicConfig(
